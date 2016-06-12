@@ -58,18 +58,20 @@ class GluonAPI(object):
         return self.json_get(self._make_url('backends/%s'))
 
     def _list_ports(self, backend=None, owner=None, device=None):
-        if backend is not None and owner is not None:
-            raise ValueError("only one of owner and backend may be given")
-        if backend is not None:
-            l = self.json_get(self._make_url('backends/%s/ports' % (backend)))
-        elif owner is not None and device is not None:
-            l = self.json_get(self._make_url('services/%s/devices/%s/ports'
-                                             % (owner, device)))
-        elif owner is not None:
-            l = self.json_get(self._make_url('services/%s/ports' % (owner)))
-        else:
-            l = self.json_get(self._make_url('ports'))
+        l = self.json_get(self._make_url('ports'))
         return l
+        # if backend is not None and owner is not None:
+        #     raise ValueError("only one of owner and backend may be given")
+        # if backend is not None:
+        #     l = self.json_get(self._make_url('backends/%s/ports' % (backend)))
+        # elif owner is not None and device is not None:
+        #     l = self.json_get(self._make_url('services/%s/devices/%s/ports'
+        #                                      % (owner, device)))
+        # elif owner is not None:
+        #     l = self.json_get(self._make_url('services/%s/ports' % (owner)))
+        # else:
+        #     l = self.json_get(self._make_url('ports'))
+        # return l
 
     def _list_backends(self):
         return self.json_get(self._make_url('backends'))
@@ -192,10 +194,11 @@ class ComputeServiceAPI(GluonAPI):
             profile['rxtx_factor'] = rxtx_factor
         if len(profile) > 0:
             data["profile"] = json.dumps(profile)
-        put(self._make_url('ports/%s/bind' % id), data=data)
+        put(self._make_url('ports/%s/bind' % id), json=data)
 
     def unbind(self, id):
-        put(self._make_url('ports/%s/unbind' % id))
+        data = {}
+        put(self._make_url('ports/%s/unbind' % id), json=data)
 
     def is_unbound(self, id):
         port = self._get_port(id)
