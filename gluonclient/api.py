@@ -42,24 +42,38 @@ class GluonAPI(object):
             raise
 
     def json_get(self, url):
-        resp = get(url)
-        if resp.status_code != 200:
-            raise exc.GluonClientException('Bad return status %d'
-                                           % resp.status_code,
-                                           status_code=resp.status_code)
         try:
-            rv = json.loads(resp.content)
-        except Exception as e:
-            raise MalformedResponseBody(reason="JSON unreadable: %s on %s"
-                                               % (e.message, resp.content))
-        return rv
+            resp = get(url)
+            if resp.status_code != 200:
+                raise exc.GluonClientException('Bad return status %d'
+                                               % resp.status_code,
+                                               status_code=resp.status_code)
+            try:
+                rv = json.loads(resp.content)
+                return rv
+            except Exception as e:
+                raise exc.MalformedResponseBody(reason="JSON unreadable: %s on %s"
+                                                       % (e.message, resp.content))
+        except exc.GluonClientException as e:
+            if e.status_code == 404:
+                raise exc.PortNotFoundClient()
+            raise
 
     def _get_backend(self, name):
         return self.json_get(self._make_url('backends/%s'))
 
     def _list_ports(self, backend=None, owner=None, device=None):
-        l = self.json_get(self._make_url('ports'))
-        return l
+        ret_port_list = []
+        port_list = self.json_get(self._make_url('ports'))
+        for port in port_list:
+            add = True
+            if owner is not None and port.get('device_owner', '') != owner:
+                add = False
+            elif device is not None and port.get('device_id', '') != device:
+                add = False
+            if add:
+                ret_port_list.append(port)
+        return ret_port_list
         # if backend is not None and owner is not None:
         #     raise ValueError("only one of owner and backend may be given")
         # if backend is not None:
